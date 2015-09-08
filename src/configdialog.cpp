@@ -33,6 +33,9 @@
 #include <QToolTip>
 #include <QTimer>
 
+#include <KMessageBox>
+#include <KLocalizedString>
+
 class UrlValidator : public QValidator
 {
   public:
@@ -131,7 +134,8 @@ void ConfigDialog::loadProjects()
                 ui->progressBar->setVisible(false);
                 ui->projectsView->setEnabled(true);
             },
-            [this](int, const QString &) {
+            [this](int, const QString &error) {
+                KMessageBox::error(this, i18n("An error occurred while retrieving projects: %1").arg(error));
                 ui->progressBar->setVisible(false);
                 ui->projectsView->setEnabled(true);
             })
