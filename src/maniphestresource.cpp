@@ -37,11 +37,16 @@
 
 #include <Async/Async>
 
+#include <KLocalizedString>
+
 ManiphestResource::ManiphestResource(const QString &identifier)
     : Akonadi::ResourceBase(identifier)
 {
     connect(this, &Akonadi::AgentBase::reloadConfiguration,
             this, &ManiphestResource::doReconfigure);
+
+    // Initialize server configuration
+    doReconfigure();
 }
 
 ManiphestResource::~ManiphestResource()
@@ -74,6 +79,13 @@ void ManiphestResource::configure(WId windowId)
 
 void ManiphestResource::doReconfigure()
 {
+    if (Settings::self()->url().isEmpty()) {
+        setName(i18nc("Name of the resource",
+                      "Phabricator Resource"));
+    } else {
+        setName(i18nc("Name of the resource (with URL of the server)",
+                      "Phabricator Resource (%1)", Settings::self()->url()));
+    }
 }
 
 void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task, Akonadi::Item &item)
