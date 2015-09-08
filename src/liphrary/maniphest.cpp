@@ -326,8 +326,8 @@ namespace Phrary
 {
 namespace Maniphest
 {
-void handleQueryResult(KJob *job,
-                       KAsync::Future<Task::List> future) // (yes, this is a copy!)
+void handleTaskQueryResult(KJob *job,
+                           KAsync::Future<Task::List> future) // (yes, this is a copy!)
 {
     KIO::StoredTransferJob *stj = qobject_cast<KIO::StoredTransferJob*>(job);
     if (stj->error()) {
@@ -352,7 +352,7 @@ void handleQueryResult(KJob *job,
 }
 }
 
-KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryProject(const QString &projectPHID,
+KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryTasksByProject(const QString &projectPHID,
                                                                     int offset)
 {
     return KAsync::start<Maniphest::Task::List, Server>(
@@ -374,12 +374,12 @@ KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryProject(const QString
             KIO::StoredTransferJob *job = KIO::storedGet(url, KIO::NoReload, KIO::HideProgressInfo);
             QObject::connect(job, &KIO::Job::result,
                             [future](KJob *job) {
-                                Maniphest::handleQueryResult(job, future);
+                                Maniphest::handleTaskQueryResult(job, future);
                             });
         });
 }
 
-KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryTasks(const QStringList &taskPHIDs,
+KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryTasksByPHID(const QStringList &taskPHIDs,
                                                                  int offset)
 {
     return KAsync::start<Maniphest::Task::List, Server>(

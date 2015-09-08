@@ -153,7 +153,7 @@ bool ManiphestResource::retrieveItem(const Akonadi::Item &item, const QSet<QByte
 {
     Q_UNUSED(parts);
 
-    Phrary::Maniphest::queryTasks({ item.remoteId() })
+    Phrary::Maniphest::queryTasksByPHID({ item.remoteId() })
         .then<void, Phrary::Maniphest::Task::List>(
             [this, item](const Phrary::Maniphest::Task::List &tasks)
             {
@@ -178,7 +178,7 @@ bool ManiphestResource::retrieveItem(const Akonadi::Item &item, const QSet<QByte
 
 void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
 {
-    Phrary::Maniphest::queryProject(collection.remoteId())
+    Phrary::Maniphest::queryTasksByProject(collection.remoteId())
         .each<Akonadi::Item::List, Phrary::Maniphest::Task>(
             [this](const Phrary::Maniphest::Task &task)
             {
