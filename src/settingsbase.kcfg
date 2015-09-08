@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:kcfg="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+                          http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+  <kcfgfile/>
+  <group name="Auth">
+    <entry name="Url" type="String">
+    </entry>
+    <entry name="APIToken" type="String">
+    </entry>
+  </group>
+
+  <group name="sync">
+    <entry name="interval" type="Int">
+        <default>-1</default>
+    </entry>
+    <entry name="projects" type="StringList">
+    </entry>
+  </group>
+</kcfg>

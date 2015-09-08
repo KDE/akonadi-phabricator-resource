@@ -1,0 +1,12 @@
+
+[Desktop Entry]
+Name=Maniphest Task Management
+Comment=Show tasks from Maniphest, the Phabricator task management application
+
+Type=AkonadiResource
+Exec=akonadi_maniphest_resource
+#Icon=network-server
+
+X-Akonadi-MimeTypes=application/x-vnd.akonadi.calendar.todo
+X-Akonadi-Capabilities=Resource
+X-Akonadi-Identifier=akonadi_maniphest_resource
