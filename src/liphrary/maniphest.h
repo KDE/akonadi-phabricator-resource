@@ -42,13 +42,17 @@ namespace Maniphest
 {
 
 class Task;
-KAsync::Job<QVector<Task>, Server> query(const QString &projectPHID,
-                                         int offset = 0);
+KAsync::Job<QVector<Task>, Server> queryProject(const QString &projectPHID,
+                                                int offset = 0);
 
+KAsync::Job<QVector<Task>, Server> queryTasks(const QStringList &taskPHIDs,
+                                              int offset = 0);
 
 class Task
 {
 public:
+    class Private;
+
     typedef QVector<Task> List;
 
     Task();
@@ -110,10 +114,7 @@ public:
     void setDependsOnTaskPHIDs(const QVector<QByteArray> &dependsOn);
 
 private:
-    class Private;
     QSharedDataPointer<Private> d_ptr;
-
-    friend KAsync::Job<QVector<Task>, Server> query(const QString &, int);
 };
 
 

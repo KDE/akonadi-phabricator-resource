@@ -322,7 +322,37 @@ void Maniphest::Task::setDependsOnTaskPHIDs(const QVector<QByteArray> &dependsOn
     d_ptr->dependsOnTaskPHIDs = dependsOn;
 }
 
-KAsync::Job<Maniphest::Task::List, Server> Phrary::Maniphest::query(const QString &projectPHID,
+namespace Phrary
+{
+namespace Maniphest
+{
+void handleQueryResult(KJob *job,
+                       KAsync::Future<Task::List> future) // (yes, this is a copy!)
+{
+    KIO::StoredTransferJob *stj = qobject_cast<KIO::StoredTransferJob*>(job);
+    if (stj->error()) {
+        qWarning() << "maniphest.query error:" << stj->errorString();
+        future.setError(stj->error(), stj->errorString());
+        return;
+    }
+
+    const QByteArray json = stj->data();
+    const QJsonDocument doc = QJsonDocument::fromJson(json);
+    const QVariantMap map = doc.toVariant().toMap();
+    if (!map[QStringLiteral("error_code")].isNull()) {
+        qWarning() << "Project::query() error:" << map[QStringLiteral("error_info")].toString();
+        future.setError(map[QStringLiteral("error_code")].toInt(),
+                        map[QStringLiteral("error_info")].toString());
+        return;
+    }
+    const QVariantMap result = map[QStringLiteral("result")].toMap();
+    future.setValue(Task::Private::parse(result));
+    future.setFinished();
+}
+}
+}
+
+KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryProject(const QString &projectPHID,
                                                                     int offset)
 {
     return KAsync::start<Maniphest::Task::List, Server>(
@@ -340,23 +370,40 @@ KAsync::Job<Maniphest::Task::List, Server> Phrary::Maniphest::query(const QStrin
             QUrl url(server.server());
             url.setPath(QStringLiteral("/api/maniphest.query"));
             url.setQuery(query);
+            qDebug() << "Requesting" << url.toDisplayString();
             KIO::StoredTransferJob *job = KIO::storedGet(url, KIO::NoReload, KIO::HideProgressInfo);
             QObject::connect(job, &KIO::Job::result,
-                [future](KJob *job) {
-                    auto f = future;
-                    KIO::StoredTransferJob *stj = qobject_cast<KIO::StoredTransferJob*>(job);
-                    if (stj->error()) {
-                        f.setError(stj->error(), stj->errorString());
-                        return;
-                    } else {
-                        const QByteArray json = stj->data();
-                        const QJsonDocument doc = QJsonDocument::fromJson(json);
-                        const QVariantMap map = doc.toVariant().toMap();
-                        const QVariantMap result = map[QStringLiteral("result")].toMap();
-                        const QVariantMap data = result[QStringLiteral("data")].toMap();
-                        f.setValue(Maniphest::Task::Private::parse(data));
-                        f.setFinished();
-                    }
-                });
+                            [future](KJob *job) {
+                                Maniphest::handleQueryResult(job, future);
+                            });
+        });
+}
+
+KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryTasks(const QStringList &taskPHIDs,
+                                                                 int offset)
+{
+    return KAsync::start<Maniphest::Task::List, Server>(
+        [taskPHIDs, offset](const Server &server, KAsync::Future<Maniphest::Task::List> &future)
+        {
+            QUrlQuery query;
+            query.addQueryItem(QStringLiteral("api.token"), server.apiToken());
+            for (int i = 0; i < taskPHIDs.count(); ++i) {
+                query.addQueryItem(QStringLiteral("ids[%i]").arg(i),
+                                   taskPHIDs.at(i));
+            }
+            if (offset > 0) {
+                query.addQueryItem(QStringLiteral("offset"),
+                                   QString::number(offset));
+            }
+
+            QUrl url(server.server());
+            url.setPath(QStringLiteral("/api/maniphest.query"));
+            url.setQuery(query);
+            qDebug() << "Requesting" << url.toDisplayString();
+            KIO::StoredTransferJob *job = KIO::storedGet(url, KIO::NoReload, KIO::HideProgressInfo);
+            QObject::connect(job, &KIO::Job::result,
+                            [future](KJob *job) {
+                                 Maniphest::handleQueryResult(job, future);
+                             });
         });
 }
