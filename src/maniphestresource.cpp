@@ -96,6 +96,7 @@ void ManiphestResource::retrieveCollections()
             [rootCollection](const Phrary::Project &project) -> Akonadi::Collection::List {
                 Akonadi::Collection collection;
                 collection.setName(project.name());
+                collection.setRemoteId(project.phid());
                 auto attribute = collection.attribute<Akonadi::EntityDisplayAttribute>(Akonadi::Entity::AddIfMissing);
                 attribute->setDisplayName(project.name());
                 collection.setContentMimeTypes({ KCalCore::Todo::todoMimeType() });
