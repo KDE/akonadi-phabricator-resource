@@ -24,6 +24,12 @@
 
 #include <AkonadiAgentBase/ResourceBase>
 
+namespace Phrary {
+namespace Maniphest {
+class Task;
+}
+}
+
 class ManiphestResource : public Akonadi::ResourceBase
                         , public Akonadi::AgentBase::Observer
 {
@@ -47,7 +53,7 @@ private Q_SLOTS:
     void doReconfigure();
 
 private:
-
+    static void payloadToItem(const Phrary::Maniphest::Task &task, Akonadi::Item &item);
 };
 
 #endif // MANIPHESTRESOURCE_H

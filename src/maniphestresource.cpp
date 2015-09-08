@@ -31,6 +31,7 @@
 #include "settings.h"
 #include "liphrary/server.h"
 #include "liphrary/project.h"
+#include "liphrary/maniphest.h"
 
 #include <KCalCore/Todo>
 
@@ -75,6 +76,39 @@ void ManiphestResource::doReconfigure()
 {
 }
 
+void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task, Akonadi::Item &item)
+{
+    item.setRemoteId(task.phid());
+    item.setRemoteRevision(QString::number(task.dateModified().toTime_t()));
+
+    KCalCore::Todo::Ptr todoPtr(new KCalCore::Todo);
+    todoPtr->setSummary(QStringLiteral("[%1] %2").arg(task.objectName(), task.title()));
+    todoPtr->setDescription(task.description());
+    todoPtr->setCompleted(task.isClosed());
+    todoPtr->setReadOnly(true);
+    if (task.priority() == QLatin1String("Whishlist")) {
+        todoPtr->setPriority(1);
+    } else if (task.priority() == QLatin1String("Low")) {
+        todoPtr->setPriority(3);
+    } else if (task.priority() == QLatin1String("Normal")) {
+        todoPtr->setPriority(5);
+    } else if (task.priority() == QLatin1String("High")) {
+        todoPtr->setPriority(7);
+    } else if (task.priority() == QLatin1String("Unbreak Now!")) {
+        todoPtr->setPriority(9);
+    } else if (task.priority() == QLatin1String("Needs Triage")) {
+        todoPtr->setPriority(0);
+    } else {
+        qWarning() << "Unknown task priority" << task.priority();
+    }
+    // TODO
+    //todoPtr->setOrganizer()
+    //todoPtr->addAttendee()
+    //todoPtr->addComment()
+
+    item.setMimeType(KCalCore::Todo::todoMimeType());
+    item.setPayload(todoPtr);
+}
 
 void ManiphestResource::retrieveCollections()
 {
@@ -102,12 +136,14 @@ void ManiphestResource::retrieveCollections()
                 collection.setContentMimeTypes({ KCalCore::Todo::todoMimeType() });
                 collection.setParentCollection(rootCollection);
                 collection.setRights(Akonadi::Collection::ReadOnly);
-                qDebug() << "Got" << collection.name();
                 return { collection };
+            },
+            [this](int, const QString &error)
+            {
+                cancelTask(error);
             })
         .then<void, Akonadi::Collection::List>(
             [this, rootCollection](const Akonadi::Collection::List &collections) {
-                qDebug() << "Got" << collections.count() << "collections!";
                 collectionsRetrieved(Akonadi::Collection::List{ rootCollection } +  collections);
             })
         .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
@@ -115,11 +151,51 @@ void ManiphestResource::retrieveCollections()
 
 bool ManiphestResource::retrieveItem(const Akonadi::Item &item, const QSet<QByteArray> &parts)
 {
+    Q_UNUSED(parts);
+
+    Phrary::Maniphest::queryTasks({ item.remoteId() })
+        .then<void, Phrary::Maniphest::Task::List>(
+            [this, item](const Phrary::Maniphest::Task::List &tasks)
+            {
+                if (tasks.count() == 0) {
+                    // error
+                    cancelTask();
+                    return;
+                }
+
+                Akonadi::Item i(item);
+                ManiphestResource::payloadToItem(tasks[0], i);
+                itemRetrieved(i);
+            },
+            [this](int, const QString &error)
+            {
+                cancelTask(error);
+            })
+        .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
+
     return true;
 }
 
 void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
 {
+    Phrary::Maniphest::queryProject(collection.remoteId())
+        .each<Akonadi::Item::List, Phrary::Maniphest::Task>(
+            [this](const Phrary::Maniphest::Task &task)
+            {
+                Akonadi::Item item;
+                ManiphestResource::payloadToItem(task, item);
+                return Akonadi::Item::List{ item };
+            },
+            [this](int, const QString &error)
+            {
+                cancelTask(error);
+            })
+        .then<void, Akonadi::Item::List>(
+            [this](const Akonadi::Item::List &items)
+            {
+                itemsRetrieved(items);
+            })
+        .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
 }
 
 AKONADI_RESOURCE_MAIN(ManiphestResource)
