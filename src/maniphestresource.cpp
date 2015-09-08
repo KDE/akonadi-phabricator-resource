@@ -32,12 +32,16 @@
 #include "liphrary/server.h"
 #include "liphrary/project.h"
 #include "liphrary/maniphest.h"
+#include "liphrary/user.h"
 
 #include <KCalCore/Todo>
+#include <KCalCore/Attendee>
 
 #include <Async/Async>
 
 #include <KLocalizedString>
+
+QHash<QByteArray, Phrary::User> ManiphestResource::mUserCache;
 
 ManiphestResource::ManiphestResource(const QString &identifier)
     : Akonadi::ResourceBase(identifier)
@@ -88,14 +92,15 @@ void ManiphestResource::doReconfigure()
     }
 }
 
-void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task, Akonadi::Item &item)
+void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task,
+                                      const Phrary::Maniphest::Transaction::List &taskTransactions,
+                                      Akonadi::Item &item)
 {
     item.setRemoteId(task.phid());
     item.setRemoteRevision(QString::number(task.dateModified().toTime_t()));
 
     KCalCore::Todo::Ptr todoPtr(new KCalCore::Todo);
     todoPtr->setSummary(QStringLiteral("[%1] %2").arg(task.objectName(), task.title()));
-    todoPtr->setDescription(task.description());
     todoPtr->setCompleted(task.isClosed());
     todoPtr->setReadOnly(true);
     if (task.priority() == QLatin1String("Wishlist")) {
@@ -113,10 +118,33 @@ void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task, Akona
     } else {
         qWarning() << "Unknown task priority" << task.priority();
     }
-    // TODO
-    //todoPtr->setOrganizer()
-    //todoPtr->addAttendee()
-    //todoPtr->addComment()
+
+    todoPtr->setOrganizer(mUserCache.value(task.authorPHID()).realName());
+    Q_FOREACH (const QByteArray &cc, task.ccPHIDs()) {
+        KCalCore::Attendee::Ptr atteePtr(new KCalCore::Attendee(mUserCache.value(cc).realName(),
+                                                                QString()));
+        todoPtr->addAttendee(atteePtr);
+    }
+
+    QString description = task.description() + QStringLiteral("\n\n");
+
+    description += QStringLiteral("-").repeated(40) + QStringLiteral("\n");
+    int commentsCount = 0;
+    Q_FOREACH (const Phrary::Maniphest::Transaction &trx, taskTransactions) {
+        if (trx.transactionType() != "core:comment") {
+            continue;
+        }
+
+        ++commentsCount;
+        description += QStringLiteral("%1 on %2 wrote:\n%3\n\n")
+            .arg(mUserCache.value(trx.authorPHID()).realName())
+            .arg(trx.dateCreated().toString(Qt::LocaleDate))
+            .arg(trx.comments());
+    }
+    if (commentsCount == 0) {
+        description = task.description();
+    }
+    todoPtr->setDescription(task.description());
 
     item.setMimeType(KCalCore::Todo::todoMimeType());
     item.setPayload(todoPtr);
@@ -175,8 +203,15 @@ bool ManiphestResource::retrieveItem(const Akonadi::Item &item, const QSet<QByte
                     return;
                 }
 
+                const Phrary::Maniphest::Task &task = tasks[0];
+
+                auto future = Phrary::Maniphest::queryTransactionsByTask(QVector<uint>{ task.id() })
+                    .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
+                // FIXME: nope nope nope nope nope nope nope nope
+                future.waitForFinished();
+
                 Akonadi::Item i(item);
-                ManiphestResource::payloadToItem(tasks[0], i);
+                ManiphestResource::payloadToItem(task, future.value(), i);
                 itemRetrieved(i);
             },
             [this](int, const QString &error)
@@ -188,14 +223,54 @@ bool ManiphestResource::retrieveItem(const Akonadi::Item &item, const QSet<QByte
     return true;
 }
 
+void ManiphestResource::fetchUsers(const QVector<QByteArray> &phids)
+{
+    auto future = Phrary::User::query(phids)
+        .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
+    // FIXME: Nope nope nope nope nope nope
+    future.waitForFinished();
+
+    Q_FOREACH (const Phrary::User &user, future.value()) {
+        mUserCache.insert(user.phid(), user);
+    }
+}
+
 void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
 {
     Phrary::Maniphest::queryTasksByProject(collection.remoteId())
         .each<Akonadi::Item::List, Phrary::Maniphest::Task>(
             [this](const Phrary::Maniphest::Task &task)
             {
+                QVector<QByteArray> usersToFetch;
+                auto author = mUserCache.constFind(task.authorPHID());
+                if (author == mUserCache.cend()) {
+                    usersToFetch.push_back(task.authorPHID());
+                }
+                Q_FOREACH (const QByteArray &user, task.ccPHIDs()) {
+                    auto ccd = mUserCache.constFind(user);
+                    if (ccd == mUserCache.cend()) {
+                        usersToFetch.push_back(user);
+                    }
+                }
+
+                auto future = Phrary::Maniphest::queryTransactionsByTask(QVector<uint>{ task.id() })
+                    .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
+                // FIXME: Nope nope nope nope nope nope nope
+                future.waitForFinished();
+
+                Q_FOREACH (const Phrary::Maniphest::Transaction &trx, future.value()) {
+                    auto author = mUserCache.constFind(trx.authorPHID());
+                    if (author == mUserCache.cend()) {
+                        usersToFetch.push_back(trx.authorPHID());
+                    }
+                }
+
+                if (!usersToFetch.isEmpty()) {
+                    fetchUsers(usersToFetch);
+                }
+
                 Akonadi::Item item;
-                ManiphestResource::payloadToItem(task, item);
+                ManiphestResource::payloadToItem(task, future.value(), item);
                 return Akonadi::Item::List{ item };
             },
             [this](int, const QString &error)

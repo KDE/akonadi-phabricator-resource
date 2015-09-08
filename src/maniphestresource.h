@@ -24,10 +24,12 @@
 
 #include <AkonadiAgentBase/ResourceBase>
 
+#include "liphrary/maniphest.h"
+
+#include <QHash>
+
 namespace Phrary {
-namespace Maniphest {
-class Task;
-}
+class User;
 }
 
 class ManiphestResource : public Akonadi::ResourceBase
@@ -53,7 +55,14 @@ private Q_SLOTS:
     void doReconfigure();
 
 private:
-    static void payloadToItem(const Phrary::Maniphest::Task &task, Akonadi::Item &item);
+    static void payloadToItem(const Phrary::Maniphest::Task &task,
+                              const Phrary::Maniphest::Transaction::List &taskTransactions,
+                              Akonadi::Item &item);
+
+    void fetchUsers(const QVector<QByteArray> &userPHIDs);
+
+private:
+    static QHash<QByteArray, Phrary::User> mUserCache;
 };
 
 #endif // MANIPHESTRESOURCE_H

@@ -118,6 +118,47 @@ private:
 };
 
 
+class Transaction
+{
+public:
+    class Private;
+
+    typedef QVector<Transaction> List;
+
+    Transaction();
+    Transaction(const Transaction &other);
+    ~Transaction();
+
+    int taskId() const;
+    void setTaskId(int taskId);
+
+    QByteArray transactionPHID() const;
+    void setTransactionPHID(const QByteArray &transactionPHID);
+
+    QByteArray transactionType() const;
+    void setTransactionType(const QByteArray &transactionType);
+
+    QString comments() const;
+    void setComments(const QString &comments);
+
+    QByteArray authorPHID() const;
+    void setAuthorPHID(const QByteArray &authorPHID);
+
+    QDateTime dateCreated() const;
+    void setDateCreated(const QDateTime &dateTime);
+
+    /* NOTE: we don't support the oldValue/newValue thing, because it
+     * changes based on transactionType and I cannot really represent that with
+     * Ph++ API and I didn't have enough beer to come up with something better
+     * (I know had enough beer to come up with QVariantMap, but cannot be bothered
+     * to implement it. We don't need it anyway).
+     */
+private:
+    QSharedDataPointer<Private> d_ptr;
+};
+
+KAsync::Job<Transaction::List, Server> queryTransactionsByTask(const QVector<uint> &taskIds);
+
 } // namespace Maniphest
 
 } // namespace Phrary

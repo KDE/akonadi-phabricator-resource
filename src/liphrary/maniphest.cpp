@@ -403,7 +403,188 @@ KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryTasksByPHID(const QSt
             KIO::StoredTransferJob *job = KIO::storedGet(url, KIO::NoReload, KIO::HideProgressInfo);
             QObject::connect(job, &KIO::Job::result,
                             [future](KJob *job) {
-                                 Maniphest::handleQueryResult(job, future);
+                                 Maniphest::handleTaskQueryResult(job, future);
+                             });
+        });
+}
+
+
+class Maniphest::Transaction::Private : public QSharedData
+{
+public:
+    Private()
+        : QSharedData()
+        , taskId(-1)
+    {}
+
+    Private(const Private &other)
+        : QSharedData(other)
+        , taskId(other.taskId)
+        , transactionPHID(other.transactionPHID)
+        , transactionType(other.transactionType)
+        , comments(other.comments)
+        , authorPHID(other.authorPHID)
+        , dateCreated(other.dateCreated)
+    {}
+
+    static Transaction::List parse(const QVariantMap &data)
+    {
+        Transaction::List trxs;
+        trxs.reserve(data.size());
+
+        for (auto iter = data.cbegin(), end = data.cend(); iter != end; ++iter) {
+            const QVariantList taskTransactions = iter.value().toList();
+            Q_FOREACH (const QVariant &dv, taskTransactions) {
+                const QVariantMap d = dv.toMap();
+                Transaction trx;
+                trx.d_ptr->taskId = d[QStringLiteral("taskId")].toInt();
+                trx.d_ptr->transactionPHID = d[QStringLiteral("transactionPHID")].toByteArray();
+                trx.d_ptr->transactionType = d[QStringLiteral("transactionType")].toByteArray();
+                trx.d_ptr->comments = d[QStringLiteral("comments")].toString();
+                trx.d_ptr->authorPHID = d[QStringLiteral("authorPHID")].toByteArray();
+                trx.d_ptr->dateCreated = QDateTime::fromTime_t(d[QStringLiteral("dateCreated")].toInt());
+
+                trxs.push_back(trx);
+            }
+        }
+
+        return trxs;
+    }
+
+    int taskId;
+    QByteArray transactionPHID;
+    QByteArray transactionType;
+    QString comments;
+    QByteArray authorPHID;
+    QDateTime dateCreated;
+};
+
+
+Maniphest::Transaction::Transaction()
+    : d_ptr(new Private)
+{
+}
+
+Maniphest::Transaction::Transaction(const Transaction &other)
+    : d_ptr(other.d_ptr)
+{
+}
+
+Maniphest::Transaction::~Transaction()
+{
+}
+
+int Maniphest::Transaction::taskId() const
+{
+    return d_ptr->taskId;
+}
+
+void Maniphest::Transaction::setTaskId(int taskId)
+{
+    d_ptr->taskId = taskId;
+}
+
+QByteArray Maniphest::Transaction::transactionPHID() const
+{
+    return d_ptr->transactionPHID;
+}
+
+void Maniphest::Transaction::setTransactionPHID(const QByteArray &transactionPHID)
+{
+    d_ptr->transactionPHID = transactionPHID;
+}
+
+QByteArray Maniphest::Transaction::transactionType() const
+{
+    return d_ptr->transactionType;
+}
+
+void Maniphest::Transaction::setTransactionType(const QByteArray &transactionType)
+{
+    d_ptr->transactionType = transactionType;
+}
+
+QString Maniphest::Transaction::comments() const
+{
+    return d_ptr->comments;
+}
+
+void Maniphest::Transaction::setComments(const QString &comments)
+{
+    d_ptr->comments = comments;
+}
+
+QByteArray Maniphest::Transaction::authorPHID() const
+{
+    return d_ptr->authorPHID;
+}
+
+void Maniphest::Transaction::setAuthorPHID(const QByteArray &authorPHID)
+{
+    d_ptr->authorPHID = authorPHID;
+}
+
+QDateTime Maniphest::Transaction::dateCreated() const
+{
+    return d_ptr->dateCreated;
+}
+
+void Maniphest::Transaction::setDateCreated(const QDateTime &dateCreated)
+{
+    d_ptr->dateCreated = dateCreated;
+}
+
+
+namespace Phrary {
+namespace Maniphest {
+
+void handleTransactionQueryResult(KJob *job,
+                                  KAsync::Future<Maniphest::Transaction::List> future) // yes, this is a copy
+{
+    KIO::StoredTransferJob *stj = qobject_cast<KIO::StoredTransferJob*>(job);
+    if (stj->error()) {
+        qWarning() << "maniphest.gettasktransactions error:" << stj->errorString();
+        future.setError(stj->error(), stj->errorString());
+        return;
+    }
+
+    const QByteArray json = stj->data();
+    const QJsonDocument doc = QJsonDocument::fromJson(json);
+    const QVariantMap map = doc.toVariant().toMap();
+    if (!map[QStringLiteral("error_code")].isNull()) {
+        qWarning() << "Project::query() error:" << map[QStringLiteral("error_info")].toString();
+        future.setError(map[QStringLiteral("error_code")].toInt(),
+                        map[QStringLiteral("error_info")].toString());
+        return;
+    }
+    const QVariantMap result = map[QStringLiteral("result")].toMap();
+    future.setValue(Transaction::Private::parse(result));
+    future.setFinished();
+}
+
+}
+}
+
+KAsync::Job<Maniphest::Transaction::List, Server> Maniphest::queryTransactionsByTask(const QVector<uint> &taskIds)
+{
+    return KAsync::start<Maniphest::Transaction::List, Server>(
+        [taskIds](const Server &server, KAsync::Future<Maniphest::Transaction::List> &future)
+        {
+            QUrlQuery query;
+            query.addQueryItem(QStringLiteral("api.token"), server.apiToken());
+            for (int i = 0; i < taskIds.count(); ++i) {
+                query.addQueryItem(QStringLiteral("ids[%1]").arg(i),
+                                   QString::number(taskIds.at(i)));
+            }
+
+            QUrl url(server.server());
+            url.setPath(QStringLiteral("/api/maniphest.gettasktransactions"));
+            url.setQuery(query);
+            qDebug() << "Requesting" << url.toDisplayString();
+            KIO::StoredTransferJob *job = KIO::storedGet(url, KIO::NoReload, KIO::HideProgressInfo);
+            QObject::connect(job, &KIO::Job::result,
+                            [future](KJob *job) {
+                                 Maniphest::handleTransactionQueryResult(job, future);
                              });
         });
 }
