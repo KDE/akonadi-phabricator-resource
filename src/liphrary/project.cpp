@@ -119,9 +119,9 @@ KAsync::Job<Project::List, Server> Project::query(const QStringList &phids)
         [phids](const Server &server, KAsync::Future<Project::List> &future) {
             QUrlQuery query;
             query.addQueryItem(QStringLiteral("api.token"), server.apiToken());
-            if (!phids.isEmpty()) {
-                query.addQueryItem(QStringLiteral("phids"),
-                                   QStringLiteral("[\"%1\"]").arg(phids.join(QStringLiteral("\",\""))));
+            for (int i = 0; i < phids.count(); ++i) {
+                query.addQueryItem(QStringLiteral("phids[%1]").arg(i),
+                                   phids.at(i));
             }
 
             QUrl url(server.server());

@@ -331,7 +331,7 @@ KAsync::Job<Maniphest::Task::List, Server> Phrary::Maniphest::query(const QStrin
             QUrlQuery query;
             query.addQueryItem(QStringLiteral("api.token"), server.apiToken());
             if (!projectPHID.isEmpty()) {
-                query.addQueryItem(QStringLiteral("projectPHIDs"), QStringLiteral("[ \"%1\" ]").arg(projectPHID));
+                query.addQueryItem(QStringLiteral("projectPHIDs[0]"), projectPHID);
             }
             if (offset > 0) {
                 query.addQueryItem(QStringLiteral("offset"), QString::number(offset));
