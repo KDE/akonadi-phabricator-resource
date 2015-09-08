@@ -157,4 +157,6 @@ void ConfigDialog::onAccepted()
         }
     }
     Settings::self()->setProjects(projects);
+
+    Settings::self()->save();
 }
