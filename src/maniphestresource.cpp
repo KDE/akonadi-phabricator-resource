@@ -98,7 +98,7 @@ void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task, Akona
     todoPtr->setDescription(task.description());
     todoPtr->setCompleted(task.isClosed());
     todoPtr->setReadOnly(true);
-    if (task.priority() == QLatin1String("Whishlist")) {
+    if (task.priority() == QLatin1String("Wishlist")) {
         todoPtr->setPriority(1);
     } else if (task.priority() == QLatin1String("Low")) {
         todoPtr->setPriority(3);
