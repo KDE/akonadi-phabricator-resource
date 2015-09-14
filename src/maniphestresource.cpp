@@ -76,6 +76,9 @@ void ManiphestResource::configure(WId windowId)
 
     if (dialog->result() == QDialog::Accepted) {
         configurationDialogAccepted();
+        if (!Settings::self()->url().isEmpty() && !Settings::self()->aPIToken().isEmpty()) {
+            synchronize();
+        }
     } else {
         configurationDialogRejected();
     }
