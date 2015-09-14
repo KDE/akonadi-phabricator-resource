@@ -22,6 +22,7 @@
 #include "maniphestresource.h"
 
 #include <QScopedPointer>
+#include <QUrl>
 
 #include <AkonadiCore/Collection>
 #include <AkonadiCore/EntityDisplayAttribute>
@@ -130,6 +131,7 @@ void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task,
                                                                 QString()));
         todoPtr->addAttendee(atteePtr);
     }
+    qDebug() << "Task" << todoPtr->uid() << "has organizer:" << todoPtr->organizer()->fullName() << "(from" << mUserCache.value(task.authorPHID()).realName() << ")";
 
     QString description = task.description()
         + QStringLiteral("\n\n")

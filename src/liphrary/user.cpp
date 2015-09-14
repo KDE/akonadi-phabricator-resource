@@ -21,13 +21,12 @@
 
 #include "user.h"
 #include "server.h"
+#include "utils_p.h"
 
 #include <QUrl>
 #include <QVariantMap>
 
 #include <Async>
-
-#include <KIO/StoredTransferJob>
 
 #include <QJsonDocument>
 
@@ -52,12 +51,14 @@ public:
     {
     }
 
-    static User::List parse(const QVariantList &list)
+    static User::List parse(const QVariant &result)
     {
-        User::List users;
-        users.reserve(list.size());
+        const QVariantList results = result.toList();
 
-        Q_FOREACH (const QVariant &l, list) {
+        User::List users;
+        users.reserve(results.size());
+
+        Q_FOREACH (const QVariant &l, results) {
             const QVariantMap d = l.toMap();
             User user;
             user.d_ptr->phid = d[QStringLiteral("phid")].toByteArray();
@@ -161,10 +162,10 @@ void User::setRoles(const QStringList &roles)
     d_ptr->roles = roles;
 }
 
-KAsync::Job<User::List, Server> User::query(const QVector<QByteArray> &phids)
+KAsync::Job<User::List, QUrl> User::query(const QVector<QByteArray> &phids)
 {
-    return KAsync::start<User::List, Server>(
-        [phids](const Server &server, KAsync::Future<User::List> &future) {
+    return KAsync::start<QUrl, Server>(
+        [phids](const Server &server) {
             QUrlQuery query;
             query.addQueryItem(QStringLiteral("api.token"), server.apiToken());
             for (int i = 0; i < phids.count(); ++i) {
@@ -175,30 +176,7 @@ KAsync::Job<User::List, Server> User::query(const QVector<QByteArray> &phids)
             QUrl url(server.server());
             url.setPath(QStringLiteral("/api/user.query"));
             url.setQuery(query);
-            qDebug() << "Requesting" << url.toDisplayString();
-            KIO::StoredTransferJob *job = KIO::storedGet(url, KIO::NoReload, KIO::HideProgressInfo);
-            QObject::connect(job, &KIO::Job::result,
-                [future](KJob *job) {
-                    auto f = future;
-                    KIO::StoredTransferJob *stj = qobject_cast<KIO::StoredTransferJob*>(job);
-                    if (stj->error()) {
-                        qWarning() << "User::query() request error:" << stj->errorString();
-                        f.setError(stj->error(), stj->errorString());
-                        return;
-                    } else {
-                        const QByteArray json = stj->data();
-                        const QJsonDocument doc = QJsonDocument::fromJson(json);
-                        const QVariantMap map = doc.toVariant().toMap();
-                        if (!map[QStringLiteral("error_code")].isNull()) {
-                            qWarning() << "User::query() error:" << map[QStringLiteral("error_info")].toString();
-                            f.setError(map[QStringLiteral("error_code")].toInt(),
-                                       map[QStringLiteral("error_info")].toString());
-                            return;
-                        }
-                        const QVariantList result = map[QStringLiteral("result")].toList();
-                        f.setValue(User::Private::parse(result));
-                        f.setFinished();
-                    }
-                });
-        });
+            return url;
+        })
+    .then<User::List, QUrl>(&Phrary::parseResponse<User>);
 }

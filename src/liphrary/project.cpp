@@ -21,6 +21,7 @@
 
 #include "project.h"
 #include "server.h"
+#include "utils_p.h"
 
 #include <QDateTime>
 #include <QVariantMap>
@@ -57,8 +58,10 @@ public:
     {
     }
 
-    static Project::List parse(const QVariantMap &data)
+    static Project::List parse(const QVariant &result)
     {
+        const QVariantMap &data = result.toMap()[QStringLiteral("data")].toMap();
+
         Project::List projects;
         projects.reserve(data.size());
 
@@ -113,10 +116,10 @@ Project::~Project()
 {
 }
 
-KAsync::Job<Project::List, Server> Project::query(const QStringList &phids)
+KAsync::Job<Project::List, QUrl> Project::query(const QStringList &phids)
 {
-    return KAsync::start<Project::List, Server>(
-        [phids](const Server &server, KAsync::Future<Project::List> &future) {
+    return KAsync::start<QUrl, Server>(
+        [phids](const Server &server) {
             QUrlQuery query;
             query.addQueryItem(QStringLiteral("api.token"), server.apiToken());
             for (int i = 0; i < phids.count(); ++i) {
@@ -127,32 +130,9 @@ KAsync::Job<Project::List, Server> Project::query(const QStringList &phids)
             QUrl url(server.server());
             url.setPath(QStringLiteral("/api/project.query"));
             url.setQuery(query);
-            KIO::StoredTransferJob *job = KIO::storedGet(url, KIO::NoReload, KIO::HideProgressInfo);
-            QObject::connect(job, &KIO::Job::result,
-                [future](KJob *job) {
-                    auto f = future;
-                    KIO::StoredTransferJob *stj = qobject_cast<KIO::StoredTransferJob*>(job);
-                    if (stj->error()) {
-                        qWarning() << "Project::query() request error:" << stj->errorString();
-                        f.setError(stj->error(), stj->errorString());
-                        return;
-                    } else {
-                        const QByteArray json = stj->data();
-                        const QJsonDocument doc = QJsonDocument::fromJson(json);
-                        const QVariantMap map = doc.toVariant().toMap();
-                        if (!map[QStringLiteral("error_code")].isNull()) {
-                            qWarning() << "Project::query() error:" << map[QStringLiteral("error_info")].toString();
-                            f.setError(map[QStringLiteral("error_code")].toInt(),
-                                       map[QStringLiteral("error_info")].toString());
-                            return;
-                        }
-                        const QVariantMap result = map[QStringLiteral("result")].toMap();
-                        const QVariantMap data = result[QStringLiteral("data")].toMap();
-                        f.setValue(Project::Private::parse(data));
-                        f.setFinished();
-                    }
-                });
-        });
+            return url;
+        })
+    .then<Project::List, QUrl>(&Phrary::parseResponse<Project>);
 }
 
 QByteArray Project::phid() const

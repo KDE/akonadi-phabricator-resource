@@ -39,6 +39,7 @@ class Server;
 class Project
 {
 public:
+    class Private;
     typedef QVector<Project> List;
 
     Project();
@@ -46,8 +47,7 @@ public:
 
     ~Project();
 
-    static KAsync::Job<Project::List, Phrary::Server> query(
-                            const QStringList &projectPHIDs = QStringList());
+    static KAsync::Job<Project::List, QUrl> query(const QStringList &projectPHIDs = QStringList());
 
     QByteArray phid() const;
     void setPHID(const QByteArray &phid);
@@ -80,7 +80,6 @@ public:
     void setDateModified(const QDateTime &dateModified);
 
 private:
-    class Private;
     QSharedDataPointer<Private> d_ptr;
 };
 
