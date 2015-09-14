@@ -103,9 +103,11 @@ void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task,
     item.setRemoteRevision(QString::number(task.dateModified().toTime_t()));
 
     KCalCore::Todo::Ptr todoPtr(new KCalCore::Todo);
+    todoPtr->setUid(task.phid());
     todoPtr->setSummary(QStringLiteral("[%1] %2").arg(task.objectName(), task.title()));
     todoPtr->setCompleted(task.isClosed());
     todoPtr->setReadOnly(true);
+    todoPtr->setUrl(task.uri());
     if (task.priority() == QLatin1String("Wishlist")) {
         todoPtr->setPriority(1);
     } else if (task.priority() == QLatin1String("Low")) {
@@ -129,9 +131,11 @@ void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task,
         todoPtr->addAttendee(atteePtr);
     }
 
-    QString description = task.description() + QStringLiteral("\n\n");
+    QString description = task.description()
+        + QStringLiteral("\n\n")
+        + QStringLiteral("-").repeated(40)
+        + QStringLiteral("\n");
 
-    description += QStringLiteral("-").repeated(40) + QStringLiteral("\n");
     int commentsCount = 0;
     Q_FOREACH (const Phrary::Maniphest::Transaction &trx, taskTransactions) {
         if (trx.transactionType() != "core:comment") {
@@ -147,7 +151,8 @@ void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task,
     if (commentsCount == 0) {
         description = task.description();
     }
-    todoPtr->setDescription(task.description());
+    todoPtr->setDescription(description.replace(QLatin1Char('\n'), QStringLiteral("<br>")));
+
 
     item.setMimeType(KCalCore::Todo::todoMimeType());
     item.setPayload(todoPtr);
@@ -242,7 +247,7 @@ void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
 {
     Phrary::Maniphest::queryTasksByProject(collection.remoteId())
         .each<Akonadi::Item::List, Phrary::Maniphest::Task>(
-            [this](const Phrary::Maniphest::Task &task)
+            [this, collection](const Phrary::Maniphest::Task &task)
             {
                 QVector<QByteArray> usersToFetch;
                 auto author = mUserCache.constFind(task.authorPHID());
@@ -273,6 +278,7 @@ void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
                 }
 
                 Akonadi::Item item;
+                item.setParentCollection(collection);
                 ManiphestResource::payloadToItem(task, future.value(), item);
                 return Akonadi::Item::List{ item };
             },
