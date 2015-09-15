@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef MANIPHESTRESOURCE_H
-#define MANIPHESTRESOURCE_H
+#ifndef PHABRICATORRESOURCE_H
+#define PHABRICATORRESOURCE_H
 
 #include <AkonadiAgentBase/ResourceBase>
 
@@ -32,14 +32,14 @@ namespace Phrary {
 class User;
 }
 
-class ManiphestResource : public Akonadi::ResourceBase
-                        , public Akonadi::AgentBase::Observer
+class PhabricatorResource : public Akonadi::ResourceBase
+                          , public Akonadi::AgentBase::Observer
 {
     Q_OBJECT
 
 public:
-    ManiphestResource(const QString &identifier);
-    ~ManiphestResource();
+    PhabricatorResource(const QString &identifier);
+    ~PhabricatorResource();
 
     void configure(WId windowId) Q_DECL_OVERRIDE;
     void abortActivity() Q_DECL_OVERRIDE;
@@ -65,4 +65,4 @@ private:
     static QHash<QByteArray, Phrary::User> mUserCache;
 };
 
-#endif // MANIPHESTRESOURCE_H
+#endif // PHABRICATORRESOURCE_H

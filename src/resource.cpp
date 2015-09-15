@@ -19,7 +19,7 @@
  *
  */
 
-#include "maniphestresource.h"
+#include "resource.h"
 
 #include <QScopedPointer>
 #include <QUrl>
@@ -43,32 +43,33 @@
 
 #include <KLocalizedString>
 
-QHash<QByteArray, Phrary::User> ManiphestResource::mUserCache;
+QHash<QByteArray, Phrary::User> PhabricatorResource::mUserCache;
 
-ManiphestResource::ManiphestResource(const QString &identifier)
+PhabricatorResource::PhabricatorResource(const QString &identifier)
     : Akonadi::ResourceBase(identifier)
+    , Akonadi::AgentBase::Observer()
 {
     connect(this, &Akonadi::AgentBase::reloadConfiguration,
-            this, &ManiphestResource::doReconfigure);
+            this, &PhabricatorResource::doReconfigure);
 
     // Initialize server configuration
     doReconfigure();
 }
 
-ManiphestResource::~ManiphestResource()
+PhabricatorResource::~PhabricatorResource()
 {
 }
 
-void ManiphestResource::abortActivity()
+void PhabricatorResource::abortActivity()
 {
 }
 
-void ManiphestResource::aboutToQuit()
+void PhabricatorResource::aboutToQuit()
 {
     abortActivity();
 }
 
-void ManiphestResource::configure(WId windowId)
+void PhabricatorResource::configure(WId windowId)
 {
     QScopedPointer<ConfigDialog> dialog(new ConfigDialog(windowId));
     dialog->exec();
@@ -86,7 +87,7 @@ void ManiphestResource::configure(WId windowId)
     }
 }
 
-void ManiphestResource::doReconfigure()
+void PhabricatorResource::doReconfigure()
 {
     if (Settings::self()->url().isEmpty()) {
         setName(i18nc("Name of the resource",
@@ -98,9 +99,9 @@ void ManiphestResource::doReconfigure()
     }
 }
 
-void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task,
-                                      const Phrary::Maniphest::Transaction::List &taskTransactions,
-                                      Akonadi::Item &item)
+void PhabricatorResource::payloadToItem(const Phrary::Maniphest::Task &task,
+                                        const Phrary::Maniphest::Transaction::List &taskTransactions,
+                                        Akonadi::Item &item)
 {
     item.setRemoteId(task.phid());
     item.setRemoteRevision(QString::number(task.dateModified().toTime_t()));
@@ -171,7 +172,7 @@ void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task,
     item.setPayload<KCalCore::Todo::Ptr>(KCalCore::Todo::Ptr(todo));
 }
 
-void ManiphestResource::retrieveCollections()
+void PhabricatorResource::retrieveCollections()
 {
     Akonadi::Collection rootCollection;
     rootCollection.setName(QUrl::fromUserInput(Settings::self()->url()).host(QUrl::PrettyDecoded));
@@ -210,7 +211,7 @@ void ManiphestResource::retrieveCollections()
         .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
 }
 
-bool ManiphestResource::retrieveItem(const Akonadi::Item &item, const QSet<QByteArray> &parts)
+bool PhabricatorResource::retrieveItem(const Akonadi::Item &item, const QSet<QByteArray> &parts)
 {
     Q_UNUSED(parts);
 
@@ -232,7 +233,7 @@ bool ManiphestResource::retrieveItem(const Akonadi::Item &item, const QSet<QByte
                 future.waitForFinished();
 
                 Akonadi::Item i(item);
-                ManiphestResource::payloadToItem(task, future.value(), i);
+                PhabricatorResource::payloadToItem(task, future.value(), i);
                 itemRetrieved(i);
             },
             [this](int, const QString &error)
@@ -244,7 +245,7 @@ bool ManiphestResource::retrieveItem(const Akonadi::Item &item, const QSet<QByte
     return true;
 }
 
-void ManiphestResource::fetchUsers(const QVector<QByteArray> &phids)
+void PhabricatorResource::fetchUsers(const QVector<QByteArray> &phids)
 {
     auto future = Phrary::User::query(phids)
         .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
@@ -256,7 +257,7 @@ void ManiphestResource::fetchUsers(const QVector<QByteArray> &phids)
     }
 }
 
-void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
+void PhabricatorResource::retrieveItems(const Akonadi::Collection &collection)
 {
     Phrary::Maniphest::queryTasksByProject(collection.remoteId())
         .each<Akonadi::Item::List, Phrary::Maniphest::Task>(
@@ -304,7 +305,7 @@ void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
 
                 Akonadi::Item item;
                 item.setParentCollection(collection);
-                ManiphestResource::payloadToItem(task, future.value(), item);
+                PhabricatorResource::payloadToItem(task, future.value(), item);
                 return Akonadi::Item::List{ item };
             },
             [this](int, const QString &error)
@@ -319,4 +320,4 @@ void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
         .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
 }
 
-AKONADI_RESOURCE_MAIN(ManiphestResource)
+AKONADI_RESOURCE_MAIN(PhabricatorResource)

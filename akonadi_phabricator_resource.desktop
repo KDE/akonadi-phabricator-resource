@@ -1,0 +1,12 @@
+
+[Desktop Entry]
+Name=Phabricator Resource
+Comment=Show tasks from Maniphest and other Phabricator applications
+
+Type=AkonadiResource
+Exec=akonadi_phabricator_resource
+#Icon=network-server
+
+X-Akonadi-MimeTypes=application/x-vnd.akonadi.calendar.todo
+X-Akonadi-Capabilities=Resource
+X-Akonadi-Identifier=akonadi_phabricator_resource

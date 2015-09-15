@@ -43,6 +43,6 @@ add_subdirectory(autotests)
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
 # Install stuff
-install(FILES akonadi_maniphest_resource.desktop
+install(FILES akonadi_phabricator_resource.desktop
         DESTINATION "${KDE_INSTALL_DATAROOTDIR}/akonadi/agents"
 )
