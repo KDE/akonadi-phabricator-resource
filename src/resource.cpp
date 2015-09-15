@@ -150,15 +150,17 @@ void PhabricatorResource::payloadToItem(const Phrary::Maniphest::Task &task,
         ++commentsCount;
         auto author = mUserCache.constFind(iter->authorPHID());
         if (author == mUserCache.constEnd()) {
-            description += i18nc("Header to a task comment, %1 is date", "On %1, unknown user wrote:")
-                .arg(iter->dateCreated().toString(Qt::LocaleDate));
+            description += i18nc("Header to a task comment: On DATE, unknown user wrote",
+                                 "On %1, unknown user wrote:",
+                                 iter->dateCreated().toString(Qt::LocaleDate));
         } else {
-            description += i18nc("Header to a task comment, %1 is date, %2 full name, %3 is username", "On %1, %2 (%3) wrote:")
-                .arg(iter->dateCreated().toString(Qt::LocalDate),
-                     author->realName(),
-                     author->userName());
+            description += i18nc("Header to a task comment: On DATE, REAL NAME (USERNAME) wrote",
+                                 "On %1, %2 (%3) wrote:",
+                                 iter->dateCreated().toString(Qt::LocalDate),
+                                 author->realName(),
+                                 author->userName());
         }
-        description += QStringLiteral("<br>%4<br><hr>").arg(Phrary::Markup::markupToHTML(iter->comments()));
+        description += QStringLiteral("<br>%1<br><hr>").arg(Phrary::Markup::markupToHTML(iter->comments()));
     }
     if (commentsCount == 0) {
         description = Phrary::Markup::markupToHTML(task.description());
