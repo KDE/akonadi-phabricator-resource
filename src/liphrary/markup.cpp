@@ -98,12 +98,14 @@ static bool parseHeader(const QString &text, int &i, QTextStream &outStream, QCh
         return false;
     }
 
+    bool isDashes = true;
     int depth = 0;
     while (i + depth < text.size() && text[i + depth] == '-') {
         ++depth;
     }
 
     if (depth == 0) {
+        isDashes = false;
         while (i + depth < text.size() && text[i + depth] == '=') {
 
             ++depth;
@@ -117,6 +119,7 @@ static bool parseHeader(const QString &text, int &i, QTextStream &outStream, QCh
     if (eol == -1) {
         eol = text.size();
     }
+
     // if the "===" span over the entire line, assume "Blabla\n======" format
     if (eol == i + depth) {
         if (i < depth + 1) {
@@ -132,7 +135,7 @@ static bool parseHeader(const QString &text, int &i, QTextStream &outStream, QCh
         outStream.string()->resize(outStream.pos() - header.size());
         outStream << QStringLiteral("<h%1>%2</h%1>").arg(realDepth).arg(header);
         i += depth;
-    } else {
+    } else if (!isDashes) {
         i += depth;
         int end = text.indexOf(QLatin1Char('='), i);
         if (end == -1) {
@@ -145,6 +148,8 @@ static bool parseHeader(const QString &text, int &i, QTextStream &outStream, QCh
 
         // Read until end of line
         for (; i < text.size() - 1 && text[i + 1] != '\n'; ++i);
+    } else if (isDashes) {
+        return false;
     }
 
     return true;

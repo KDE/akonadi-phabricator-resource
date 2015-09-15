@@ -105,6 +105,9 @@ void MarkupParserTest::simpleMarkupTest_data()
     QTest::newRow("underline header small")
                                    << QStringLiteral("Foo Bar Header\n--------------")
                                    << QStringLiteral("<h2>Foo Bar Header</h2>");
+    QTest::newRow("dash in prefix not parsed as header")
+                                   << QStringLiteral("- Some stuff")
+                                   << QStringLiteral("- Some stuff");
     QTest::newRow("padded monospace")
                                    << QStringLiteral("  This will be monospace")
                                    << QStringLiteral("<pre>This will be monospace</pre>");
