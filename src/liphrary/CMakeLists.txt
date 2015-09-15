@@ -2,6 +2,7 @@ set(liphrary_SRCS
     project.cpp
     server.cpp
     maniphest.cpp
+    markup.cpp
     user.cpp
 )
 

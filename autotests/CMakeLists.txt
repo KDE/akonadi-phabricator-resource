@@ -1,1 +1,1 @@
-
+ecm_add_test(markupparsertest.cpp LINK_LIBRARIES liphrary Qt5::Test NAME_PREFIX liphrary)

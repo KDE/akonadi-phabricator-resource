@@ -34,6 +34,7 @@
 #include "liphrary/project.h"
 #include "liphrary/maniphest.h"
 #include "liphrary/user.h"
+#include "liphrary/markup.h"
 
 #include <KCalCore/Todo>
 #include <KCalCore/Attendee>
@@ -93,6 +94,7 @@ void ManiphestResource::doReconfigure()
     } else {
         setName(i18nc("Name of the resource (with URL of the server)",
                       "Phabricator Resource (%1)", Settings::self()->url()));
+        Phrary::Markup::setPhabricatorUrl(Settings::self()->url());
     }
 }
 
@@ -103,61 +105,70 @@ void ManiphestResource::payloadToItem(const Phrary::Maniphest::Task &task,
     item.setRemoteId(task.phid());
     item.setRemoteRevision(QString::number(task.dateModified().toTime_t()));
 
-    KCalCore::Todo::Ptr todoPtr(new KCalCore::Todo);
-    todoPtr->setUid(task.phid());
-    todoPtr->setSummary(QStringLiteral("[%1] %2").arg(task.objectName(), task.title()));
-    todoPtr->setCompleted(task.isClosed());
-    todoPtr->setReadOnly(true);
-    todoPtr->setUrl(task.uri());
+    KCalCore::Todo *todo = new KCalCore::Todo;
+    todo->setUid(task.phid());
+    todo->setSummary(QStringLiteral("[%1] %2").arg(task.objectName(), task.title()));
+    todo->setCompleted(task.isClosed());
+    todo->setUrl(task.uri());
     if (task.priority() == QLatin1String("Wishlist")) {
-        todoPtr->setPriority(1);
+        todo->setPriority(1);
     } else if (task.priority() == QLatin1String("Low")) {
-        todoPtr->setPriority(3);
+        todo->setPriority(3);
     } else if (task.priority() == QLatin1String("Normal")) {
-        todoPtr->setPriority(5);
+        todo->setPriority(5);
     } else if (task.priority() == QLatin1String("High")) {
-        todoPtr->setPriority(7);
+        todo->setPriority(7);
     } else if (task.priority() == QLatin1String("Unbreak Now!")) {
-        todoPtr->setPriority(9);
+        todo->setPriority(9);
     } else if (task.priority() == QLatin1String("Needs Triage")) {
-        todoPtr->setPriority(0);
+        todo->setPriority(0);
     } else {
         qWarning() << "Unknown task priority" << task.priority();
     }
 
-    todoPtr->setOrganizer(mUserCache.value(task.authorPHID()).realName());
+    todo->setOrganizer(mUserCache.value(task.authorPHID()).realName());
     Q_FOREACH (const QByteArray &cc, task.ccPHIDs()) {
         KCalCore::Attendee::Ptr atteePtr(new KCalCore::Attendee(mUserCache.value(cc).realName(),
                                                                 QString()));
-        todoPtr->addAttendee(atteePtr);
+        todo->addAttendee(atteePtr);
     }
-    qDebug() << "Task" << todoPtr->uid() << "has organizer:" << todoPtr->organizer()->fullName() << "(from" << mUserCache.value(task.authorPHID()).realName() << ")";
 
-    QString description = task.description()
-        + QStringLiteral("\n\n")
-        + QStringLiteral("-").repeated(40)
-        + QStringLiteral("\n");
+    QString description = Phrary::Markup::markupToHTML(task.description())
+        + QStringLiteral("<br><br><hr><br>");
 
     int commentsCount = 0;
-    Q_FOREACH (const Phrary::Maniphest::Transaction &trx, taskTransactions) {
-        if (trx.transactionType() != "core:comment") {
+    // Iterate in reverse order, because Conduit returns transactions in order
+    // from newest to oldest, which makes no sense when displaying comments
+    auto iter = taskTransactions.cend();
+    while (iter != taskTransactions.cbegin()) {
+        --iter;
+        if (iter->transactionType() != "core:comment") {
             continue;
         }
 
         ++commentsCount;
-        description += QStringLiteral("%1 on %2 wrote:\n%3\n\n")
-            .arg(mUserCache.value(trx.authorPHID()).realName())
-            .arg(trx.dateCreated().toString(Qt::LocaleDate))
-            .arg(trx.comments());
+        auto author = mUserCache.constFind(iter->authorPHID());
+        if (author == mUserCache.constEnd()) {
+            description += i18nc("Header to a task comment, %1 is date", "On %1, unknown user wrote:")
+                .arg(iter->dateCreated().toString(Qt::LocaleDate));
+        } else {
+            description += i18nc("Header to a task comment, %1 is date, %2 full name, %3 is username", "On %1, %2 (%3) wrote:")
+                .arg(iter->dateCreated().toString(Qt::LocalDate),
+                     author->realName(),
+                     author->userName());
+        }
+        description += QStringLiteral("<br>%4<br><hr>").arg(Phrary::Markup::markupToHTML(iter->comments()));
     }
     if (commentsCount == 0) {
-        description = task.description();
+        description = Phrary::Markup::markupToHTML(task.description());
     }
-    todoPtr->setDescription(description.replace(QLatin1Char('\n'), QStringLiteral("<br>")));
+    todo->setDescription(description, true);
 
+    // This must be set as last, otherwise all other set* are ignored
+    todo->setReadOnly(true);
 
     item.setMimeType(KCalCore::Todo::todoMimeType());
-    item.setPayload(todoPtr);
+    item.setPayload<KCalCore::Todo::Ptr>(KCalCore::Todo::Ptr(todo));
 }
 
 void ManiphestResource::retrieveCollections()
@@ -276,6 +287,18 @@ void ManiphestResource::retrieveItems(const Akonadi::Collection &collection)
                 }
 
                 if (!usersToFetch.isEmpty()) {
+                    // remove duplicates. They somehow happen and they are expensive
+                    // to fetch
+                    // TODO: Make them not happen in the first place
+                    std::sort(usersToFetch.begin(), usersToFetch.end());
+                    for (auto iter = usersToFetch.begin(), end = usersToFetch.end(); iter != end; end = usersToFetch.end() ) {
+                        auto next = iter;
+                        if (iter == ++next) {
+                            iter = usersToFetch.erase(iter);
+                        } else {
+                            iter = next;
+                        }
+                    }
                     fetchUsers(usersToFetch);
                 }
 

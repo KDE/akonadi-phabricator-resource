@@ -159,6 +159,8 @@ private:
 
 KAsync::Job<Transaction::List, QUrl> queryTransactionsByTask(const QVector<uint> &taskIds);
 
+
+
 } // namespace Maniphest
 
 } // namespace Phrary

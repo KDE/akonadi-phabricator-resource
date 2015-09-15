@@ -11,6 +11,7 @@ include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDEFrameworkCompilerSettings)
 include(ECMQtDeclareLoggingCategory)
+include(ECMAddTests)
 
 # Dependencies
 
@@ -19,7 +20,7 @@ set(AKONADI_VERSION "5.0")
 set(QT_REQUIRED_VERSION "5.3.0")
 set(KCALCORE_MIN_VERSION "4.82.0")
 
-find_package(Qt5 ${QT_REQUIRED_VERSION} REQUIRED Core Network Gui)
+find_package(Qt5 ${QT_REQUIRED_VERSION} REQUIRED Core Network Gui Test)
 
 find_package(KF5Config ${KF5_VERSION} CONFIG REQUIRED)
 find_package(KF5KIO ${KF5_VERSION} CONFIG REQUIRED)
