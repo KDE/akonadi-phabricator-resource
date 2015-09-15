@@ -19,61 +19,113 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="authTab">
+     <widget class="QWidget" name="generalTab">
       <attribute name="title">
-       <string>Authentication</string>
+       <string>General</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Phabricator &amp;URL:</string>
+        <widget class="QGroupBox" name="authBox">
+         <property name="title">
+          <string>Authentication</string>
          </property>
-         <property name="buddy">
-          <cstring>phabricatorUrlEdit</cstring>
-         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QLabel" name="phabricatorUrlLabel">
+            <property name="text">
+             <string>Phabricator &amp;URL:</string>
+            </property>
+            <property name="buddy">
+             <cstring>phabricatorUrlEdit</cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="phabricatorUrlEdit">
+            <property name="text">
+             <string>https://</string>
+            </property>
+            <property name="placeholderText">
+             <string>https://</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="apiTokenLabel">
+            <property name="text">
+             <string>Conduit API &amp;Token:</string>
+            </property>
+            <property name="buddy">
+             <cstring>apiTokenEdit</cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="apiTokenEdit"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="howToGetTokenHelp">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;To obtain the Conduit API Token, open your account settings on the Phabricator instance in web browser and select&lt;span style=&quot; font-style:italic;&quot;&gt;Conduit API Tokens&lt;/span&gt; tab in the left menu. Click &lt;span style=&quot; font-style:italic;&quot;&gt;Generate API Token,&lt;/span&gt; confirm creation of a new token and then copy-paste the token here.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="toolTipDuration">
+             <number>0</number>
+            </property>
+            <property name="text">
+             <string>&lt;a href=&quot;#&quot;&gt;How to obtain the API token?&lt;/a&gt;</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="openExternalLinks">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="phabricatorUrlEdit">
-         <property name="text">
-          <string>https://</string>
+        <widget class="QGroupBox" name="syncGroupBox">
+         <property name="title">
+          <string>Synchronization</string>
          </property>
-         <property name="placeholderText">
-          <string>https://</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Conduit API &amp;Token:</string>
-         </property>
-         <property name="buddy">
-          <cstring>apiTokenEdit</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="apiTokenEdit"/>
-       </item>
-       <item>
-        <widget class="QLabel" name="howToGetTokenHelp">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;To obtain the Conduit API Token, open your account settings on the Phabricator instance in web browser and select&lt;span style=&quot; font-style:italic;&quot;&gt;Conduit API Tokens&lt;/span&gt; tab in the left menu. Click &lt;span style=&quot; font-style:italic;&quot;&gt;Generate API Token,&lt;/span&gt; confirm creation of a new token and then copy-paste the token here.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="toolTipDuration">
-          <number>0</number>
-         </property>
-         <property name="text">
-          <string>&lt;a href=&quot;#&quot;&gt;How to obtain the API token?&lt;/a&gt;</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-         <property name="openExternalLinks">
-          <bool>false</bool>
-         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QCheckBox" name="refreshCheckBox">
+            <property name="text">
+             <string>Automatically refresh</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QLabel" name="refreshIntervalLabel">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Refresh every</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="refreshInterval">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string> minutes</string>
+              </property>
+              <property name="minimum">
+               <number>5</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
@@ -91,20 +143,20 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="syncTab">
+     <widget class="QWidget" name="maniphestTab">
       <attribute name="title">
-       <string>Synchronization</string>
+       <string>Maniphest</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QLabel" name="label_4">
+        <widget class="QLabel" name="maniphestProjectsLabel">
          <property name="text">
-          <string>Projects:</string>
+          <string>Projects to synchronize:</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="projectsView">
+        <widget class="QListWidget" name="maniphestProjectsView">
          <property name="selectionMode">
           <enum>QAbstractItemView::SingleSelection</enum>
          </property>
@@ -114,7 +166,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QProgressBar" name="progressBar">
+        <widget class="QProgressBar" name="maniphestProgressBar">
          <property name="maximum">
           <number>0</number>
          </property>
@@ -124,38 +176,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="refreshCheckBox">
+        <widget class="QPushButton" name="maniphestRefreshButton">
          <property name="text">
-          <string>Automatically refresh</string>
+          <string>&amp;Refresh</string>
          </property>
         </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QLabel" name="label_5">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Refresh every</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="refreshInterval">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="suffix">
-            <string> minutes</string>
-           </property>
-           <property name="minimum">
-            <number>5</number>
-           </property>
-          </widget>
-         </item>
-        </layout>
        </item>
       </layout>
      </widget>
@@ -175,38 +200,6 @@
  </widget>
  <resources/>
  <connections>
-  <connection>
-   <sender>refreshCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_5</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>103</x>
-     <y>57</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>106</x>
-     <y>92</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>refreshCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>refreshInterval</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>103</x>
-     <y>57</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>115</x>
-     <y>92</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>

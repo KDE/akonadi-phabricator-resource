@@ -73,7 +73,7 @@ ConfigDialog::ConfigDialog(WId windowId)
     ui->phabricatorUrlEdit->setText(url.isEmpty() ? QStringLiteral("https://") : url);
     ui->phabricatorUrlEdit->setValidator(new UrlValidator(this));
     ui->apiTokenEdit->setText(Settings::self()->aPIToken());
-    ui->progressBar->setVisible(false);
+    ui->maniphestProgressBar->setVisible(false);
 
     connect(this, &QDialog::accepted,
             this, &ConfigDialog::onAccepted);
@@ -90,6 +90,10 @@ ConfigDialog::ConfigDialog(WId windowId)
             [this](const QString &) {
                 QToolTip::showText(ui->howToGetTokenHelp->mapToGlobal(QPoint(0, 0)),
                                    ui->howToGetTokenHelp->toolTip());
+            });
+    connect(ui->maniphestRefreshButton, &QPushButton::clicked,
+            [this](bool) {
+                scheduleLoadProjects();
             });
 
     scheduleLoadProjects();
@@ -115,9 +119,10 @@ void ConfigDialog::scheduleLoadProjects()
 
 void ConfigDialog::loadProjects()
 {
-    ui->progressBar->setVisible(true);
-    ui->projectsView->setEnabled(false);
-    ui->projectsView->clear();
+    ui->maniphestProgressBar->setVisible(true);
+    ui->maniphestRefreshButton->setEnabled(false);
+    ui->maniphestProjectsView->setEnabled(false);
+    ui->maniphestProjectsView->clear();
 
     Phrary::Project::query()
         .each<void, Phrary::Project>(
@@ -127,17 +132,19 @@ void ConfigDialog::loadProjects()
                 item->setData(Qt::UserRole, project.phid());
                 item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
                 item->setCheckState(Settings::self()->projects().contains(project.phid()) ? Qt::Checked : Qt::Unchecked);
-                ui->projectsView->addItem(item);
+                ui->maniphestProjectsView->addItem(item);
             })
         .then<void>(
             [this]() {
-                ui->progressBar->setVisible(false);
-                ui->projectsView->setEnabled(true);
+                ui->maniphestProgressBar->setVisible(false);
+                ui->maniphestRefreshButton->setEnabled(true);
+                ui->maniphestProjectsView->setEnabled(true);
             },
             [this](int, const QString &error) {
                 KMessageBox::error(this, i18n("An error occurred while retrieving projects: %1").arg(error));
-                ui->progressBar->setVisible(false);
-                ui->projectsView->setEnabled(true);
+                ui->maniphestProgressBar->setVisible(false);
+                ui->maniphestRefreshButton->setEnabled(true);
+                ui->maniphestProjectsView->setEnabled(true);
             })
         .exec(Phrary::Server(ui->phabricatorUrlEdit->text(), ui->apiTokenEdit->text()));
 }
@@ -154,8 +161,8 @@ void ConfigDialog::onAccepted()
     }
 
     QStringList projects;
-    for (int i = 0; i < ui->projectsView->count(); ++i) {
-        QListWidgetItem *item = ui->projectsView->item(i);
+    for (int i = 0; i < ui->maniphestProjectsView->count(); ++i) {
+        QListWidgetItem *item = ui->maniphestProjectsView->item(i);
         if (item->checkState() == Qt::Checked) {
             projects.push_back(QString::fromLatin1(item->data(Qt::UserRole).toByteArray()));
         }
