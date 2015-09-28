@@ -1,7 +1,15 @@
 
 [Desktop Entry]
 Name=Phabricator Resource
+Name[nl]=Phabricator-hulpbron
+Name[pt]=Recurso do Phabricator
+Name[uk]=Ресурс Phabricator
+Name[x-test]=xxPhabricator Resourcexx
 Comment=Show tasks from Maniphest and other Phabricator applications
+Comment[nl]=Taken uit Maniphest en andere Phabricator-toepassingen tonen
+Comment[pt]=Mostra tarefas do Maniphest de outras aplicações do Phabricator
+Comment[uk]=Показ завдань від Maniphest та інших програм Phabricator
+Comment[x-test]=xxShow tasks from Maniphest and other Phabricator applicationsxx
 
 Type=AkonadiResource
 Exec=akonadi_phabricator_resource
