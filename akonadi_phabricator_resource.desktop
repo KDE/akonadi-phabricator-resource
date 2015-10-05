@@ -8,6 +8,7 @@ Name[pl]=Zasób Phabricator
 Name[pt]=Recurso do Phabricator
 Name[pt_BR]=Recurso do Phabricator
 Name[sk]=Zdroj Phabricator
+Name[sv]=Phabricator-resurs
 Name[uk]=Ресурс Phabricator
 Name[x-test]=xxPhabricator Resourcexx
 Comment=Show tasks from Maniphest and other Phabricator applications
@@ -18,6 +19,7 @@ Comment[pl]=Pokaż zadania z Maniphest i innych aplikacji Phabricatora
 Comment[pt]=Mostra tarefas do Maniphest de outras aplicações do Phabricator
 Comment[pt_BR]=Mostra tarefas do Maniphest de outros aplicativos do Phabricator
 Comment[sk]=Zobrazí úlohy z aplikácie Maniphest a iných aplikácií Phabricator
+Comment[sv]=Visa uppgifter från Maniphest och andra Phabricator-program
 Comment[uk]=Показ завдань від Maniphest та інших програм Phabricator
 Comment[x-test]=xxShow tasks from Maniphest and other Phabricator applicationsxx
 
