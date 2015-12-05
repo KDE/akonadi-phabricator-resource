@@ -178,7 +178,7 @@ void PhabricatorResource::retrieveCollections()
 {
     Akonadi::Collection rootCollection;
     rootCollection.setName(QUrl::fromUserInput(Settings::self()->url()).host(QUrl::PrettyDecoded));
-    auto attribute = rootCollection.attribute<Akonadi::EntityDisplayAttribute>(Akonadi::Entity::AddIfMissing);
+    auto attribute = rootCollection.attribute<Akonadi::EntityDisplayAttribute>(Akonadi::Collection::AddIfMissing);
     attribute->setDisplayName(rootCollection.name());
     rootCollection.setContentMimeTypes({ Akonadi::Collection::mimeType() });
     rootCollection.setRights(Akonadi::Collection::ReadOnly);
@@ -195,7 +195,7 @@ void PhabricatorResource::retrieveCollections()
                 Akonadi::Collection collection;
                 collection.setName(project.name());
                 collection.setRemoteId(project.phid());
-                auto attribute = collection.attribute<Akonadi::EntityDisplayAttribute>(Akonadi::Entity::AddIfMissing);
+                auto attribute = collection.attribute<Akonadi::EntityDisplayAttribute>(Akonadi::Collection::AddIfMissing);
                 attribute->setDisplayName(project.name());
                 collection.setContentMimeTypes({ KCalCore::Todo::todoMimeType() });
                 collection.setParentCollection(rootCollection);
