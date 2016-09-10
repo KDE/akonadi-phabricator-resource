@@ -20,6 +20,7 @@ Name[uk]=Ресурс Phabricator
 Name[x-test]=xxPhabricator Resourcexx
 Name[zh_CN]=Phabricator 资源
 Comment=Show tasks from Maniphest and other Phabricator applications
+Comment[ast]=Amuesa xeres de Maniphest y otres aplicaciones de Phabricator
 Comment[ca]=Mostra les tasques del Maniphest i d'altres aplicacions del Phabricator
 Comment[ca@valencia]=Mostra les tasques del Maniphest i d'altres aplicacions del Phabricator
 Comment[cs]=Zobrazit úkoly z Maniphestu a dalších aplikací Phabricatoru
