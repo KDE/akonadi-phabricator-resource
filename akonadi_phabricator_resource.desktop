@@ -1,7 +1,6 @@
 
 [Desktop Entry]
 Name=Phabricator Resource
-Name[ast]=Recursu de Phabricator
 Name[ca]=Recurs del Phabricator
 Name[ca@valencia]=Recurs del Phabricator
 Name[cs]=Zdroj Phabricatoru
@@ -28,7 +27,6 @@ Name[x-test]=xxPhabricator Resourcexx
 Name[zh_CN]=Phabricator 资源
 Name[zh_TW]=Phabricator 資源
 Comment=Show tasks from Maniphest and other Phabricator applications
-Comment[ast]=Amuesa les xeres de Maniphest y otres aplicaciones de Phabricator
 Comment[ca]=Mostra les tasques del Maniphest i d'altres aplicacions del Phabricator
 Comment[ca@valencia]=Mostra les tasques del Maniphest i d'altres aplicacions del Phabricator
 Comment[cs]=Zobrazit úkoly z Maniphestu a dalších aplikací Phabricatoru
