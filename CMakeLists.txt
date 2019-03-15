@@ -24,10 +24,12 @@ find_package(Qt5 ${QT_REQUIRED_VERSION} REQUIRED Core Network Gui Test)
 
 find_package(KF5Config ${KF5_VERSION} CONFIG REQUIRED)
 find_package(KF5KIO ${KF5_VERSION} CONFIG REQUIRED)
+find_package(KF5I18n ${KF5_VERSION} CONFIG REQUIRED)
+find_package(KF5WidgetsAddons ${KF5_VERSION} CONFIG REQUIRED)
 find_package(KF5Akonadi ${AKONADI_MIN_VERSION} CONFIG REQUIRED)
 find_package(KF5CalendarCore ${KCALCORE_MIN_VERSION} CONFIG REQUIRED)
 
-find_package(KF5Async CONFIG REQUIRED)
+find_package(KAsync CONFIG REQUIRED)
 
 find_package(Xsltproc REQUIRED)
 set_package_properties(Xsltproc PROPERTIES DESCRIPTION "XSLT processor from libxslt" TYPE REQUIRED PURPOSE "Required to generate D-Bus interfaces for all Akonadi resources.")

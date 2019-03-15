@@ -47,7 +47,7 @@ public:
     ~User();
     User &operator=(const User &other);
 
-    static KAsync::Job<User::List, QUrl> query(const QVector<QByteArray> &phids = {});
+    static KAsync::Job<User::List, Server> query(const QVector<QByteArray> &phids = {});
 
     QByteArray phid() const;
     void setPHID(const QByteArray &phid);

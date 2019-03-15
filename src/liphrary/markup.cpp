@@ -94,19 +94,19 @@ static bool parseHeader(const QString &text, int &i, QTextStream &outStream, QCh
 {
     Q_UNUSED(buff);
 
-    if (i > 0 && text[i - 1] != '\n') {
+    if (i > 0 && text[i - 1] != QLatin1Char('\n')) {
         return false;
     }
 
     bool isDashes = true;
     int depth = 0;
-    while (i + depth < text.size() && text[i + depth] == '-') {
+    while (i + depth < text.size() && text[i + depth] == QLatin1Char('-')) {
         ++depth;
     }
 
     if (depth == 0) {
         isDashes = false;
-        while (i + depth < text.size() && text[i + depth] == '=') {
+        while (i + depth < text.size() && text[i + depth] == QLatin1Char('=')) {
 
             ++depth;
         }
@@ -126,7 +126,7 @@ static bool parseHeader(const QString &text, int &i, QTextStream &outStream, QCh
             return false;
         }
 
-        const int realDepth = (text[i] == '-') ? 2 : 1;
+        const int realDepth = (text[i] == QLatin1Char('-')) ? 2 : 1;
         int prevEol = qMax(text.lastIndexOf(QLatin1Char('\n'), i - 2), 0);
         const QString header = text.midRef(prevEol, i - 1 - prevEol).trimmed().toString();
         // Dirty trick: outStream.seek() does not work, we need to trim the actual string
@@ -147,7 +147,7 @@ static bool parseHeader(const QString &text, int &i, QTextStream &outStream, QCh
         }
 
         // Read until end of line
-        for (; i < text.size() - 1 && text[i + 1] != '\n'; ++i);
+        for (; i < text.size() - 1 && text[i + 1] != QLatin1Char('\n'); ++i);
     } else if (isDashes) {
         return false;
     }

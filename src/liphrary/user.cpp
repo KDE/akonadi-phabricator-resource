@@ -24,6 +24,7 @@
 #include "utils_p.h"
 
 #include <QUrl>
+#include <QUrlQuery>
 #include <QVariantMap>
 
 #include <Async>
@@ -162,15 +163,14 @@ void User::setRoles(const QStringList &roles)
     d_ptr->roles = roles;
 }
 
-KAsync::Job<User::List, QUrl> User::query(const QVector<QByteArray> &phids)
+KAsync::Job<User::List, Server> User::query(const QVector<QByteArray> &phids)
 {
     return KAsync::start<QUrl, Server>(
         [phids](const Server &server) {
             QUrlQuery query;
             query.addQueryItem(QStringLiteral("api.token"), server.apiToken());
             for (int i = 0; i < phids.count(); ++i) {
-                query.addQueryItem(QStringLiteral("phids[%1]").arg(i),
-                                   phids.at(i));
+                query.addQueryItem(QStringLiteral("phids[%1]").arg(i), QString::fromUtf8(phids.at(i)));
             }
 
             QUrl url(server.server());

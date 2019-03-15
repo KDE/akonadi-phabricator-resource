@@ -47,7 +47,7 @@ public:
 
     ~Project();
 
-    static KAsync::Job<Project::List, QUrl> query(const QStringList &projectPHIDs = QStringList());
+    static KAsync::Job<Project::List, Server> query(const QStringList &projectPHIDs = QStringList());
 
     QByteArray phid() const;
     void setPHID(const QByteArray &phid);

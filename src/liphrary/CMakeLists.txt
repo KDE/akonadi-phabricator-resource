@@ -12,7 +12,7 @@ add_library(liphrary STATIC ${liphrary_SRCS})
 target_link_libraries(liphrary
 PUBLIC
     Qt5::Core
-    KF5::Async
+    KAsync
 PRIVATE
     KF5::KIOCore
 )

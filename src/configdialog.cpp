@@ -125,23 +125,19 @@ void ConfigDialog::loadProjects()
     ui->maniphestProjectsView->clear();
 
     Phrary::Project::query()
-        .each<void, Phrary::Project>(
-            [this](const Phrary::Project &project) {
-                QListWidgetItem *item = new QListWidgetItem();
-                item->setText(project.name());
-                item->setData(Qt::UserRole, project.phid());
-                item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
-                item->setCheckState(Settings::self()->projects().contains(project.phid()) ? Qt::Checked : Qt::Unchecked);
-                ui->maniphestProjectsView->addItem(item);
+        .then<void, Phrary::Project::List>(
+            [this](const Phrary::Project::List &projects) {
+                for (const auto &project : projects) {
+                    QListWidgetItem *item = new QListWidgetItem();
+                    item->setText(project.name());
+                    item->setData(Qt::UserRole, project.phid());
+                    item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
+                    item->setCheckState(Settings::self()->projects().contains(QString::fromUtf8(project.phid())) ? Qt::Checked : Qt::Unchecked);
+                    ui->maniphestProjectsView->addItem(item);
+                }
             })
         .then<void>(
             [this]() {
-                ui->maniphestProgressBar->setVisible(false);
-                ui->maniphestRefreshButton->setEnabled(true);
-                ui->maniphestProjectsView->setEnabled(true);
-            },
-            [this](int, const QString &error) {
-                KMessageBox::error(this, i18n("An error occurred while retrieving projects: %1").arg(error));
                 ui->maniphestProgressBar->setVisible(false);
                 ui->maniphestRefreshButton->setEnabled(true);
                 ui->maniphestProjectsView->setEnabled(true);

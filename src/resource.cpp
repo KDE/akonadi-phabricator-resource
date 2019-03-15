@@ -39,7 +39,7 @@
 #include <KCalCore/Todo>
 #include <KCalCore/Attendee>
 
-#include <Async/Async>
+#include <KAsync/Async>
 
 #include <KLocalizedString>
 
@@ -103,12 +103,12 @@ void PhabricatorResource::payloadToItem(const Phrary::Maniphest::Task &task,
                                         const Phrary::Maniphest::Transaction::List &taskTransactions,
                                         Akonadi::Item &item)
 {
-    item.setRemoteId(task.phid());
+    item.setRemoteId(QString::fromUtf8(task.phid()));
     item.setRemoteRevision(QString::number(task.dateModified().toTime_t()));
 
     KCalCore::Todo *todo = new KCalCore::Todo;
-    todo->setUid(task.phid());
-    todo->setSummary(QStringLiteral("[%1] %2").arg(task.objectName(), task.title()));
+    todo->setUid(item.remoteId());
+    todo->setSummary(QStringLiteral("[%1] %2").arg(QString::fromUtf8(task.objectName()), task.title()));
     todo->setCompleted(task.isClosed());
     todo->setUrl(task.uri());
     if (task.priority() == QLatin1String("Wishlist")) {
@@ -190,21 +190,23 @@ void PhabricatorResource::retrieveCollections()
     }
 
     Phrary::Project::query(Settings::self()->projects())
-        .each<Akonadi::Collection::List, Phrary::Project>(
-            [rootCollection](const Phrary::Project &project) -> Akonadi::Collection::List {
-                Akonadi::Collection collection;
-                collection.setName(project.name());
-                collection.setRemoteId(project.phid());
-                auto attribute = collection.attribute<Akonadi::EntityDisplayAttribute>(Akonadi::Collection::AddIfMissing);
-                attribute->setDisplayName(project.name());
-                collection.setContentMimeTypes({ KCalCore::Todo::todoMimeType() });
-                collection.setParentCollection(rootCollection);
-                collection.setRights(Akonadi::Collection::ReadOnly);
-                return { collection };
-            },
-            [this](int, const QString &error)
-            {
-                cancelTask(error);
+        .then<Akonadi::Collection::List, Phrary::Project::List>(
+            [rootCollection](const Phrary::Project::List &projects) -> Akonadi::Collection::List {
+                Akonadi::Collection::List cols;
+                cols.reserve(projects.size());
+                std::transform(projects.cbegin(), projects.cend(), std::back_inserter(cols),
+                [&rootCollection](const Phrary::Project &project) {
+                    Akonadi::Collection collection;
+                    collection.setName(project.name());
+                    collection.setRemoteId(QString::fromUtf8(project.phid()));
+                    auto attribute = collection.attribute<Akonadi::EntityDisplayAttribute>(Akonadi::Collection::AddIfMissing);
+                    attribute->setDisplayName(project.name());
+                    collection.setContentMimeTypes({ KCalCore::Todo::todoMimeType() });
+                    collection.setParentCollection(rootCollection);
+                    collection.setRights(Akonadi::Collection::ReadOnly);
+                    return collection;
+                });
+                return cols;
             })
         .then<void, Akonadi::Collection::List>(
             [this, rootCollection](const Akonadi::Collection::List &collections) {
@@ -237,10 +239,6 @@ bool PhabricatorResource::retrieveItem(const Akonadi::Item &item, const QSet<QBy
                 Akonadi::Item i(item);
                 PhabricatorResource::payloadToItem(task, future.value(), i);
                 itemRetrieved(i);
-            },
-            [this](int, const QString &error)
-            {
-                cancelTask(error);
             })
         .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
 
@@ -262,61 +260,59 @@ void PhabricatorResource::fetchUsers(const QVector<QByteArray> &phids)
 void PhabricatorResource::retrieveItems(const Akonadi::Collection &collection)
 {
     Phrary::Maniphest::queryTasksByProject(collection.remoteId())
-        .each<Akonadi::Item::List, Phrary::Maniphest::Task>(
-            [this, collection](const Phrary::Maniphest::Task &task)
-            {
-                QVector<QByteArray> usersToFetch;
-                auto author = mUserCache.constFind(task.authorPHID());
-                if (author == mUserCache.cend()) {
-                    usersToFetch.push_back(task.authorPHID());
-                }
-                Q_FOREACH (const QByteArray &user, task.ccPHIDs()) {
-                    auto ccd = mUserCache.constFind(user);
-                    if (ccd == mUserCache.cend()) {
-                        usersToFetch.push_back(user);
-                    }
-                }
-
-                auto future = Phrary::Maniphest::queryTransactionsByTask(QVector<uint>{ task.id() })
-                    .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
-                // FIXME: Nope nope nope nope nope nope nope
-                future.waitForFinished();
-
-                Q_FOREACH (const Phrary::Maniphest::Transaction &trx, future.value()) {
-                    auto author = mUserCache.constFind(trx.authorPHID());
+        .then<Akonadi::Item::List, Phrary::Maniphest::Task::List>(
+            [this, collection](const Phrary::Maniphest::Task::List &tasks) {
+                Akonadi::Item::List items;
+                for (const auto &task : tasks) {
+                    QVector<QByteArray> usersToFetch;
+                    auto author = mUserCache.constFind(task.authorPHID());
                     if (author == mUserCache.cend()) {
-                        usersToFetch.push_back(trx.authorPHID());
+                        usersToFetch.push_back(task.authorPHID());
                     }
-                }
-
-                if (!usersToFetch.isEmpty()) {
-                    // remove duplicates. They somehow happen and they are expensive
-                    // to fetch
-                    // TODO: Make them not happen in the first place
-                    std::sort(usersToFetch.begin(), usersToFetch.end());
-                    for (auto iter = usersToFetch.begin(), end = usersToFetch.end(); iter != end; end = usersToFetch.end() ) {
-                        auto next = iter;
-                        if (iter == ++next) {
-                            iter = usersToFetch.erase(iter);
-                        } else {
-                            iter = next;
+                    Q_FOREACH (const QByteArray &user, task.ccPHIDs()) {
+                        auto ccd = mUserCache.constFind(user);
+                        if (ccd == mUserCache.cend()) {
+                            usersToFetch.push_back(user);
                         }
                     }
-                    fetchUsers(usersToFetch);
-                }
 
-                Akonadi::Item item;
-                item.setParentCollection(collection);
-                PhabricatorResource::payloadToItem(task, future.value(), item);
-                return Akonadi::Item::List{ item };
-            },
-            [this](int, const QString &error)
-            {
-                cancelTask(error);
+                    auto future = Phrary::Maniphest::queryTransactionsByTask(QVector<uint>{ task.id() })
+                        .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));
+                    // FIXME: Nope nope nope nope nope nope nope
+                    future.waitForFinished();
+
+                    Q_FOREACH (const Phrary::Maniphest::Transaction &trx, future.value()) {
+                        auto author = mUserCache.constFind(trx.authorPHID());
+                        if (author == mUserCache.cend()) {
+                            usersToFetch.push_back(trx.authorPHID());
+                        }
+                    }
+
+                    if (!usersToFetch.isEmpty()) {
+                        // remove duplicates. They somehow happen and they are expensive
+                        // to fetch
+                        // TODO: Make them not happen in the first place
+                        std::sort(usersToFetch.begin(), usersToFetch.end());
+                        for (auto iter = usersToFetch.begin(), end = usersToFetch.end(); iter != end; end = usersToFetch.end() ) {
+                            auto next = iter;
+                            if (iter == ++next) {
+                                iter = usersToFetch.erase(iter);
+                            } else {
+                                iter = next;
+                            }
+                        }
+                        fetchUsers(usersToFetch);
+                    }
+
+                    Akonadi::Item item;
+                    item.setParentCollection(collection);
+                    PhabricatorResource::payloadToItem(task, future.value(), item);
+                    items.push_back(item);
+                }
+                return items;
             })
         .then<void, Akonadi::Item::List>(
-            [this](const Akonadi::Item::List &items)
-            {
+            [this](const Akonadi::Item::List &items) {
                 itemsRetrieved(items);
             })
         .exec(Phrary::Server(Settings::self()->url(), Settings::self()->aPIToken()));

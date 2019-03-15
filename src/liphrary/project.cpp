@@ -27,6 +27,7 @@
 #include <QVariantMap>
 #include <QByteArray>
 #include <QUrl>
+#include <QUrlQuery>
 
 #include <QJsonDocument>
 
@@ -116,7 +117,7 @@ Project::~Project()
 {
 }
 
-KAsync::Job<Project::List, QUrl> Project::query(const QStringList &phids)
+KAsync::Job<Project::List, Server> Project::query(const QStringList &phids)
 {
     return KAsync::start<QUrl, Server>(
         [phids](const Server &server) {

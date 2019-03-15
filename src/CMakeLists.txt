@@ -38,8 +38,10 @@ target_link_libraries(akonadi_phabricator_resource
     Qt5::DBus
     KF5::AkonadiAgentBase
     KF5::ConfigCore
-    KF5::Async
+    KF5::I18n
+    KF5::WidgetsAddons
     KF5::CalendarCore
+    KAsync
     liphrary
 )
 

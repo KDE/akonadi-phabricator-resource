@@ -25,6 +25,7 @@
 
 #include <QByteArray>
 #include <QUrl>
+#include <QUrlQuery>
 #include <QDateTime>
 #include <QJsonDocument>
 
@@ -324,8 +325,7 @@ void Maniphest::Task::setDependsOnTaskPHIDs(const QVector<QByteArray> &dependsOn
     d_ptr->dependsOnTaskPHIDs = dependsOn;
 }
 
-KAsync::Job<Maniphest::Task::List, QUrl> Maniphest::queryTasksByProject(const QString &projectPHID,
-                                                                    int offset)
+KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryTasksByProject(const QString &projectPHID, int offset)
 {
     return KAsync::start<QUrl, Server>(
         [projectPHID, offset](const Server &server)
@@ -347,8 +347,7 @@ KAsync::Job<Maniphest::Task::List, QUrl> Maniphest::queryTasksByProject(const QS
     .then<Maniphest::Task::List, QUrl>(&Phrary::parseResponse<Maniphest::Task>);
 }
 
-KAsync::Job<Maniphest::Task::List, QUrl> Maniphest::queryTasksByPHID(const QStringList &taskPHIDs,
-                                                                 int offset)
+KAsync::Job<Maniphest::Task::List, Server> Maniphest::queryTasksByPHID(const QStringList &taskPHIDs, int offset)
 {
     return KAsync::start<QUrl, Server>(
         [taskPHIDs, offset](const Server &server)
@@ -500,7 +499,7 @@ void Maniphest::Transaction::setDateCreated(const QDateTime &dateCreated)
     d_ptr->dateCreated = dateCreated;
 }
 
-KAsync::Job<Maniphest::Transaction::List, QUrl> Maniphest::queryTransactionsByTask(const QVector<uint> &taskIds)
+KAsync::Job<Maniphest::Transaction::List, Server> Maniphest::queryTransactionsByTask(const QVector<uint> &taskIds)
 {
     return KAsync::start<QUrl, Server>(
         [taskIds](const Server &server)
