@@ -27,7 +27,6 @@ Name[sl]=Vir Phabricatorja
 Name[sv]=Phabricator-resurs
 Name[tr]=Phabricator Kaynağı
 Name[uk]=Ресурс Phabricator
-Name[x-test]=xxPhabricator Resourcexx
 Name[zh_CN]=Phabricator 资源
 Name[zh_TW]=Phabricator 資源
 Comment=Show tasks from Maniphest and other Phabricator applications
@@ -56,7 +55,6 @@ Comment[sl]=Prikazuje opravila iz Maniphesta in drugih Phabrikatorjevih programo
 Comment[sv]=Visa uppgifter från Maniphest och andra Phabricator-program
 Comment[tr]=Maniphest ve diğer Phabricator uygulamaları üzerinden görevleri göster
 Comment[uk]=Показ завдань від Maniphest та інших програм Phabricator
-Comment[x-test]=xxShow tasks from Maniphest and other Phabricator applicationsxx
 Comment[zh_CN]=显示来自 Maniphest 和其他 Phabricator 应用的任务
 Comment[zh_TW]=從 Maniphest 與其他 Phabricator 應用程式顯示工作
 
