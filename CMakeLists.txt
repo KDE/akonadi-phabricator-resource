@@ -20,6 +20,9 @@ set(AKONADI_VERSION "5.0")
 set(QT_REQUIRED_VERSION "5.3.0")
 set(KCALCORE_MIN_VERSION "4.82.0")
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(Qt5 ${QT_REQUIRED_VERSION} REQUIRED Core Network Gui Test)
 
 find_package(KF5Config ${KF5_VERSION} CONFIG REQUIRED)
@@ -34,6 +37,7 @@ find_package(KAsync CONFIG REQUIRED)
 find_package(Xsltproc REQUIRED)
 set_package_properties(Xsltproc PROPERTIES DESCRIPTION "XSLT processor from libxslt" TYPE REQUIRED PURPOSE "Required to generate D-Bus interfaces for all Akonadi resources.")
 
+kde_enable_exceptions()
 
 # Subdirectories
 

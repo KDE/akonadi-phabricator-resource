@@ -129,9 +129,8 @@ void PhabricatorResource::payloadToItem(const Phrary::Maniphest::Task &task,
 
     todo->setOrganizer(mUserCache.value(task.authorPHID()).realName());
     Q_FOREACH (const QByteArray &cc, task.ccPHIDs()) {
-        KCalCore::Attendee::Ptr atteePtr(new KCalCore::Attendee(mUserCache.value(cc).realName(),
-                                                                QString()));
-        todo->addAttendee(atteePtr);
+        KCalCore::Attendee attee(mUserCache.value(cc).realName(), QString());
+        todo->addAttendee(attee);
     }
 
     QString description = Phrary::Markup::markupToHTML(task.description())
